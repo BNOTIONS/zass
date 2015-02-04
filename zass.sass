@@ -1,0 +1,230 @@
+// Prefixing
+// -----------------------------------------------------------------------------
+
+=prefix($name, $argument, $webkit: true, $moz: true, $ms: true, $o: true)
+    @if $webkit
+        -webkit-#{$name}: #{$argument}
+    @if $moz
+        -moz-#{$name}: #{$argument}
+    @if $ms
+        -ms-#{$name}: #{$argument}
+    @if $o
+        -o-#{$name}: #{$argument}
+    #{$name}: #{$argument}
+
+//  Usage example
+// +prefix(filter, blur(20px), $moz: false, $ms: false, $o: false, )
+
+// Layout
+// -----------------------------------------------------------------------------
+
+// Box Sizing
+=box-sizing($box-model:border-box)
+    -webkit-box-sizing: $box-model
+    -moz-box-sizing: $box-model
+    box-sizing: $box-model
+
+// If only one value is passed, the height will equal the width
+=size($height, $width:$height)
+    height: $height
+    width: $width
+
+// REM font size with pixel fallback
+// ???? Is this useful???
+// Untested
+@function calculateRem($size)
+    $remSize: $size / 16px
+    @return $remSize * 1rem
+
+=font-size($size)
+    font-size: $size
+    font-size: calculateRem($size)
+
+// Positioning
+// If only postion is passed default for all coordinates is 0
+=pos($position, $coordinate...)
+    position: $position
+    @if length($coordinate) > 0
+        +multi-coordinate-pos($coordinate...)
+    @else
+        top: 0
+        left: 0
+        right: 0
+        bottom: 0
+
+=multi-coordinate-pos($top, $left:"", $bottom:"", $right:"")
+    top: #{$top}
+    left: #{$left}
+    right: #{$right}
+    bottom: #{$bottom}
+
+// Pseudo Elements
+// Includes Positioning mixin
+=after($position, $coordinate...)
+    content: ""
+    +pos($position, $coordinate...)
+
+// Flex Box
+// ???? What vendor prefix are required? Could this be smarter?
+=flex($position : center)
+    display: -webkit-flex
+    -webkit-align-items: $position
+    -webkit-justify-content: $position
+
+// Media Queries
+$screen-med: "800px"
+$screen-lg: "1200px"
+$screen-xl: "1600px"
+
+=screen($size, $limiter: "min-width")
+    @if $size == med
+        @media only screen and ( $limiter: $screen-med )
+            @content
+    @else if $size == lg
+        @media only screen and ( $limiter: $screen-lg )
+            @content
+    @else if $size == xl
+        @media only screen and ( $limiter: $screen-xl )
+            @content
+    @else
+        @media only screen and ( $size )
+            @content
+
+// Background Images
+// -----------------------------------------------------------------------------
+
+=bg($pos-x:center, $pos-y:center, $scale:auto, $repeat:no-repeat)
+    background-repeat: $repeat
+    background-position-x: $pos-x
+    background-position-y: $pos-y
+    // Are those Mozilla fallbacks necessary?
+    background-position: $pos-x $pos-y
+    -webkit-background-size: $scale
+    -moz-background-size: $scale
+    background-size: $scale
+
+
+=bg-responsive($filename:"", $path:'../img')
+    background-image: url('#{$path}/s/#{$filename}')
+    +screen(med)
+        background-image: url('#{$path}/m/#{$filename}')
+    +screen(lg)
+        background-image: url('#{$path}/lg/#{$filename}')
+    +screen(xl)
+        background-image: url('#{$path}/xl/#{$filename}')
+
+// SVG Fallbacks
+// Untested
+
+$image-path: '../img' !default
+$fallback-extension: 'png' !default
+$retina-suffix: '@2x'
+
+=svg-image($name, $size:false)
+    background-image: url(#{$image-path}/#{$name}.svg)
+    @if($size)
+        background-size: $size
+
+    .no-svg &
+        background-image: url(#{$image-path}/#{$name}.#{$fallback-extension})
+        @media only screen and (-moz-min-device-pixel-ratio: 1.5), only screen and (-o-min-device-pixel-ratio: 3/2), only screen and (-webkit-min-device-pixel-ratio: 1.5), only screen and (min-device-pixel-ratio: 1.5)
+            background-image: url(#{$image-path}/#{$name}#{$retina-suffix}.#{$fallback-extension})
+
+// Opacity with IE 8 Support
+=opacity($opacity)
+    opacity: $opacity
+    $opacity-ie: $opacity * 100
+    filter: alpha(opacity=$opacity-ie)
+
+// Border Radius
+=border-radius($radius...)
+    background-clip: padding-box
+    @if length($radius) == 1
+        -webkit-border-radius: $radius
+        border-radius: $radius
+    @else
+        +multi-border-radius($radius...)
+
+=multi-border-radius($topLeft: 0, $topRight: 0, $bottomRight: 0, $bottomLeft: 0)
+    -webkit-border-radius: $topLeft $topRight $bottomRight $bottomLeft
+    border-radius: $topLeft $topRight $bottomRight $bottomLeft
+
+// Circle
+// Create a square with a full border radius
+=circle($size)
+    +size($size)
+    +border-radius($size)
+
+// Displaying and Hiding Content
+=show($toggle)
+    @if $toggle == on
+        pointer-events: auto
+        visibility: visible
+        +opacity(1)
+    @else if $toggle == off
+        pointer-events: none
+        visibility: hidden
+        +opacity(0)
+
+// App Specific Elements
+// -----------------------------------------------------------------------------
+
+// Things that are repeatable, may require variables, but
+// may be omitted depending on a projects needs
+
+// Image Wrapper
+=img_wrapper($position, $top:"", $left:"", $right:"", $bottom:"")
+    +position($position, $top, $left, $right, $bottom)
+    +bg
+
+// Shading
+=shade($angle : 270, $from : 0%, $to: 100%)
+    text-shadow: 0px 0px 10px rgba(#000, 0.5)
+    &:after
+        +after(absolute, 0,0,0,0)
+        @include linear-gradient($angle+deg, rgba(#000, 0) $from, rgba(#000, 0.9) $to)
+
+// Common Patterns
+// -----------------------------------------------------------------------------
+
+// Things that are repeatable, that do NOT require variables
+// but may be omitted depending on a projects needs
+
+%center-block
+    display: block
+    margin-left: auto
+    margin-right: auto
+
+%center-abs
+    position: absolute
+    top: 50%
+    left: 50%
+    +transform(translate3d(-50%, -50%, 0))
+
+%center-abs-h
+    position: absolute
+    left: 50%
+    +transform(translate3d(-50%, 0, 0))
+
+%center-abs-v
+    position: absolute
+    top: 50%
+    +transform(translate3d(0, -50%, 0))
+
+%ellipsis
+    overflow: hidden
+    text-overflow: ellipsis
+    white-space: nowrap
+
+%word-wrap
+    word-break: break-word
+    -webkit-hyphens: auto
+    -moz-hyphens: auto
+    hyphens: auto
+
+%scrollable
+    +pos(absolute)
+    pointer-events: auto
+    overflow-y: scroll
+    -webkit-overflow-scrolling: touch
+    -ms-overflow-style: none !important
